@@ -14,22 +14,16 @@
 
 'use strict';
 
-angular.module('zeppelinWebApp').controller('NotenameCtrl', function($scope, $rootScope, $routeParams, websocketMsgSrv) {
+angular.module('zeppelinWebApp').controller('NotenameCtrl', function($scope, $rootScope, websocketMsgSrv) {
   var vm = this;
   vm.websocketMsgSrv = websocketMsgSrv;
-  $scope.note = {};
+  
   vm.createNote = function(){
-  	  if(!vm.clone){
-		  vm.websocketMsgSrv.createNotebook($scope.note.notename);
-  	  }else{
-	  	 var noteId = $routeParams.noteId;
-  	  	 vm.websocketMsgSrv.cloneNotebook(noteId, $scope.note.notename);
-  	  }
+	  vm.websocketMsgSrv.createNotebook($scope.notename);
   };
-  vm.preVisible = function(clone){
+  vm.preVisible = function(){
 		var generatedName = vm.generateName();
-		$scope.note.notename = 'Note ' + generatedName;
-		vm.clone = clone;
+		$scope.notename = 'Note ' + generatedName;
 		$scope.$apply();
   };
   vm.generateName = function () {

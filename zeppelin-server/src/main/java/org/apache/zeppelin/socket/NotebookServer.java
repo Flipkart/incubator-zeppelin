@@ -24,11 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.servlet.http.HttpServletRequest;
-
-import org.apache.zeppelin.conf.ZeppelinConfiguration;
-import org.apache.zeppelin.conf.ZeppelinConfiguration.ConfVars;
 import org.apache.zeppelin.display.AngularObject;
 import org.apache.zeppelin.display.AngularObjectRegistry;
 import org.apache.zeppelin.display.AngularObjectRegistryListener;
@@ -39,8 +35,8 @@ import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.Notebook;
 import org.apache.zeppelin.notebook.Paragraph;
 import org.apache.zeppelin.scheduler.Job;
-import org.apache.zeppelin.scheduler.Job.Status;
 import org.apache.zeppelin.scheduler.JobListener;
+import org.apache.zeppelin.scheduler.Job.Status;
 import org.apache.zeppelin.server.ZeppelinServer;
 import org.apache.zeppelin.socket.Message.OP;
 import org.eclipse.jetty.websocket.WebSocket;
@@ -48,7 +44,6 @@ import org.eclipse.jetty.websocket.WebSocketServlet;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 /**
@@ -69,6 +64,7 @@ public class NotebookServer extends WebSocketServlet implements
   }
   @Override
   public boolean checkOrigin(HttpServletRequest request, String origin) {
+   /*
     URI sourceUri = null;
     String currentHost = null;
 
@@ -88,6 +84,8 @@ public class NotebookServer extends WebSocketServlet implements
     }
 
     return false;
+    */
+      return true;
   }
 
   @Override
@@ -115,9 +113,6 @@ public class NotebookServer extends WebSocketServlet implements
           case LIST_NOTES:
             broadcastNoteList();
             break;
-          case GET_HOME_NOTE:
-            sendHomeNote(conn, notebook);
-            break;
           case GET_NOTE:
             sendNote(conn, notebook, messagereceived);
             break;
@@ -126,9 +121,6 @@ public class NotebookServer extends WebSocketServlet implements
             break;
           case DEL_NOTE:
             removeNote(conn, notebook, messagereceived);
-            break;
-          case CLONE_NOTE:
-            cloneNote(conn, notebook, messagereceived);
             break;
           case COMMIT_PARAGRAPH:
             updateParagraph(conn, notebook, messagereceived);
@@ -290,20 +282,10 @@ public class NotebookServer extends WebSocketServlet implements
 
   private void broadcastNoteList() {
     Notebook notebook = notebook();
-
-    ZeppelinConfiguration conf = notebook.getConf();
-    String homescreenNotebookId = conf.getString(ConfVars.ZEPPELIN_NOTEBOOK_HOMESCREEN);
-    boolean hideHomeScreenNotebookFromList = conf
-        .getBoolean(ConfVars.ZEPPELIN_NOTEBOOK_HOMESCREEN_HIDE);
-
     List<Note> notes = notebook.getAllNotes();
     List<Map<String, String>> notesInfo = new LinkedList<>();
     for (Note note : notes) {
       Map<String, String> info = new HashMap<>();
-      if (hideHomeScreenNotebookFromList && note.id().equals(homescreenNotebookId)) {
-        continue;
-      }
-
       info.put("id", note.id());
       info.put("name", note.getName());
       notesInfo.add(info);
@@ -324,23 +306,6 @@ public class NotebookServer extends WebSocketServlet implements
       addConnectionToNote(note.id(), conn);
       conn.send(serializeMessage(new Message(OP.NOTE).put("note", note)));
       sendAllAngularObjects(note, conn);
-    }
-  }
-
-  private void sendHomeNote(NotebookSocket conn, Notebook notebook) throws IOException {
-    String noteId = notebook.getConf().getString(ConfVars.ZEPPELIN_NOTEBOOK_HOMESCREEN);
-
-    Note note = null;
-    if (noteId != null) {
-      note = notebook.getNote(noteId);
-    }
-
-    if (note != null) {
-      addConnectionToNote(note.id(), conn);
-      conn.send(serializeMessage(new Message(OP.NOTE).put("note", note)));
-      sendAllAngularObjects(note, conn);
-    } else {
-      conn.send(serializeMessage(new Message(OP.NOTE).put("note", null)));
     }
   }
 
@@ -433,30 +398,6 @@ public class NotebookServer extends WebSocketServlet implements
     p.setText((String) fromMessage.get("paragraph"));
     note.persist();
     broadcast(note.id(), new Message(OP.PARAGRAPH).put("paragraph", p));
-  }
-  
-  private void cloneNote(NotebookSocket conn, Notebook notebook, Message fromMessage)
-      throws IOException, CloneNotSupportedException {
-    String noteId = getOpenNoteId(conn);
-    String name = (String) fromMessage.get("name");
-    Note sourceNote = notebook.getNote(noteId);
-    Note newNote = notebook.createNote();
-    if (name != null) {
-      newNote.setName(name);
-    }
-    // Copy the interpreter bindings
-    List<String> boundInterpreterSettingsIds = notebook
-        .getBindedInterpreterSettingsIds(sourceNote.id());
-    notebook.bindInterpretersToNote(newNote.id(), boundInterpreterSettingsIds);
-
-    List<Paragraph> paragraphs = sourceNote.getParagraphs();
-    for (Paragraph para : paragraphs) {
-      Paragraph p = (Paragraph) para.clone();
-      newNote.addParagraph(p);
-    }
-    newNote.persist();
-    broadcastNote(newNote);
-    broadcastNoteList();
   }
 
   private void removeParagraph(NotebookSocket conn, Notebook notebook,

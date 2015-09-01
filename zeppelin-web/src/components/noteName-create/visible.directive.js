@@ -26,10 +26,7 @@ angular.module('zeppelinWebApp').directive('modalvisible', function () {
     		var previsibleMethod = scope.preVisibleCallback;
     		var postVisibleMethod = scope.postVisibleCallback;
     		elem.on('show.bs.modal',function(e) {
-    			var relatedTgt = angular.element(e.relatedTarget);
-    			var clone = relatedTgt.data('clone');
-    			var cloneNote = clone ? true : false;
-    			previsibleMethod()(cloneNote);
+    			previsibleMethod();
     		});
     		elem.on('shown.bs.modal', function(e) {
     			if(scope.targetinput) {

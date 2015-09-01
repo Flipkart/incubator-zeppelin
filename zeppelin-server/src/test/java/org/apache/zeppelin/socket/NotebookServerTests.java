@@ -19,9 +19,14 @@
  */
 package org.apache.zeppelin.socket;
 
+import org.apache.zeppelin.notebook.Note;
+import org.apache.zeppelin.server.ZeppelinServer;
 import org.junit.Assert;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 
 /**
@@ -45,6 +50,4 @@ import java.net.UnknownHostException;
         NotebookServer server = new NotebookServer();
         Assert.assertFalse(server.checkOrigin(new TestHttpServletRequest(), "http://evillocalhost:8080"));
     }
-
-
 }

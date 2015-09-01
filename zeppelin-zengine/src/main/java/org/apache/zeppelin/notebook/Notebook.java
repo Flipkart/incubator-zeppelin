@@ -399,8 +399,5 @@ public class Notebook {
     return replFactory;
   }
 
-  public ZeppelinConfiguration getConf() {
-    return conf;
-  }
 
 }
