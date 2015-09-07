@@ -260,7 +260,16 @@
             </goals>
             <configuration>
               <failOnViolation>false</failOnViolation>
-
+              <excludes>org/apache/zeppelin/interpreter/thrift/*</excludes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>checkstyle-gen-html-report</id>
+            <phase>install</phase>
+            <goals>
+              <goal>checkstyle-aggregate</goal>
+            </goals>
+            <configuration>
               <excludes>org/apache/zeppelin/interpreter/thrift/*</excludes>
             </configuration>
           </execution>
@@ -535,6 +544,10 @@
                     <versionRange>
                       [2.13,)
                     </versionRange>
+                    <goals>
+                      <goal>checkstyle</goal>
+                      <goal>check</goal>
+                    </goals>
                   </pluginExecutionFilter>
                   <action>
                     <ignore></ignore>
@@ -623,11 +636,5 @@
         </plugins>
       </build>
     </profile>
-      <profile>
-          <id>dev</id>
-          <properties>
-              <skipCheck>true</skipCheck>
-          </properties>
-      </profile>
   </profiles>
 </project>
