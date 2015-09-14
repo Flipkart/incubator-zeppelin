@@ -91,13 +91,13 @@
     <module>angular</module>
     <module>shell</module>
     <module>hive</module>
-    <module>geode</module>
+<!--    <module>geode</module> -->
     <module>postgresql</module>
     <module>tajo</module>
-    <module>flink</module>
+<!--    <module>flink</module>
     <module>ignite</module>
     <module>lens</module>
-    <module>cassandra</module>
+    <module>cassandra</module> -->
     <module>zeppelin-web</module>
     <module>zeppelin-server</module>
     <module>zeppelin-distribution</module>
