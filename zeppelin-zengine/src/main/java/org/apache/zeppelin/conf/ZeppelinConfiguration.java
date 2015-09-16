@@ -372,6 +372,9 @@ public class ZeppelinConfiguration extends XMLConfiguration {
     return Arrays.asList(getString(ConfVars.ZEPPELIN_ALLOWED_ORIGINS).toLowerCase().split(","));
   }
 
+  public String getAuthFilterClassName(){
+      return getString(ConfVars.ZEPPELIN_AUTH_FILTERS_CLASS);
+  }
 
   /**
    * Wrapper class.
@@ -429,7 +432,8 @@ public class ZeppelinConfiguration extends XMLConfiguration {
     ZEPPELIN_CONF_DIR("zeppelin.conf.dir", "conf"),
     // Allows a way to specify a ',' separated list of allowed origins for rest and websockets
     // i.e. http://localhost:8080
-    ZEPPELIN_ALLOWED_ORIGINS("zeppelin.server.allowed.origins", "*");
+    ZEPPELIN_ALLOWED_ORIGINS("zeppelin.server.allowed.origins", "*"),
+    ZEPPELIN_AUTH_FILTERS_CLASS("zeppelin.server.filter.auth",null);
 
     private String varName;
     @SuppressWarnings("rawtypes")

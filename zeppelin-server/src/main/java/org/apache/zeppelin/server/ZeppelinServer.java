@@ -36,6 +36,7 @@ import org.apache.zeppelin.interpreter.InterpreterFactory;
 import org.apache.zeppelin.notebook.Notebook;
 import org.apache.zeppelin.notebook.repo.NotebookRepo;
 import org.apache.zeppelin.notebook.repo.NotebookRepoSync;
+import org.apache.zeppelin.rest.AuthRestApi;
 import org.apache.zeppelin.rest.InterpreterRestApi;
 import org.apache.zeppelin.rest.NotebookRestApi;
 import org.apache.zeppelin.rest.ZeppelinRestApi;
@@ -87,7 +88,7 @@ public class ZeppelinServer extends Application {
     jettyServer = setupJettyServer(conf);
 
     // REST api
-    final ServletContextHandler restApi = setupRestApiContextHandler();
+    final ServletContextHandler restApi = setupRestApiContextHandler(conf);
     /** NOTE: Swagger-core is included via the web.xml in zeppelin-web
      * But the rest of swagger is configured here
      */
@@ -175,8 +176,25 @@ public class ZeppelinServer extends Application {
     cxfContext.setContextPath("/");
     cxfContext.addServlet(servletHolder, "/ws/*");
     cxfContext.addFilter(new FilterHolder(CorsFilter.class), "/*",
-        EnumSet.allOf(DispatcherType.class));
-    return cxfContext;
+            EnumSet.allOf(DispatcherType.class));
+
+      if (conf.getAuthFilterClassName() != null) {
+          LOG.info("auth enabled  with filter class :" + conf.getAuthFilterClassName());
+          Class cls = null;
+          try {
+              cls = ZeppelinServer.class.getClassLoader().loadClass(conf.getAuthFilterClassName());
+              cxfContext.addFilter(new FilterHolder(cls), "/*",
+                      EnumSet.allOf(DispatcherType.class));
+          } catch (ClassNotFoundException e) {
+              LOG.error("Auth failed for ApiContext",e);
+          }
+
+      }
+      else {
+          LOG.info("auth is Off  for ApiContext");
+      }
+
+      return cxfContext;
   }
 
   private static SslContextFactory getSslContextFactory(ZeppelinConfiguration conf)
@@ -212,7 +230,7 @@ public class ZeppelinServer extends Application {
     return scf.getSslContext();
   }
 
-  private static ServletContextHandler setupRestApiContextHandler() {
+  private static ServletContextHandler setupRestApiContextHandler(ZeppelinConfiguration conf) {
     final ServletHolder cxfServletHolder = new ServletHolder(new CXFNonSpringJaxrsServlet());
     cxfServletHolder.setInitParameter("javax.ws.rs.Application", ZeppelinServer.class.getName());
     cxfServletHolder.setName("rest");
@@ -225,6 +243,22 @@ public class ZeppelinServer extends Application {
 
     cxfContext.addFilter(new FilterHolder(CorsFilter.class), "/*",
         EnumSet.allOf(DispatcherType.class));
+
+      if (conf.getAuthFilterClassName() != null) {
+          LOG.info("auth enabled  with filter class :" + conf.getAuthFilterClassName());
+          Class cls = null;
+          try {
+              cls = ZeppelinServer.class.getClassLoader().loadClass(conf.getAuthFilterClassName());
+              cxfContext.addFilter(new FilterHolder(cls), "/*",
+                      EnumSet.allOf(DispatcherType.class));
+          } catch (ClassNotFoundException e) {
+              LOG.error("Auth failed for ApiContext",e);
+          }
+
+      }
+      else {
+          LOG.info("auth is Off  for ApiContext");
+      }
     return cxfContext;
   }
 
@@ -331,6 +365,9 @@ public class ZeppelinServer extends Application {
 
     InterpreterRestApi interpreterApi = new InterpreterRestApi(replFactory);
     singletons.add(interpreterApi);
+
+      AuthRestApi authRestApi =new AuthRestApi();
+      singletons.add(authRestApi);
 
     return singletons;
   }

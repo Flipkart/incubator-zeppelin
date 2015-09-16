@@ -41,6 +41,7 @@ import org.apache.zeppelin.scheduler.Job.Status;
 import org.apache.zeppelin.scheduler.JobListener;
 import org.apache.zeppelin.server.ZeppelinServer;
 import org.apache.zeppelin.socket.Message.OP;
+import org.apache.zeppelin.utils.SecurityContextHolder;
 import org.apache.zeppelin.utils.SecurityUtils;
 import org.eclipse.jetty.websocket.WebSocket;
 import org.eclipse.jetty.websocket.WebSocketServlet;
@@ -81,7 +82,14 @@ public class NotebookServer extends WebSocketServlet implements
 
   @Override
   public WebSocket doWebSocketConnect(HttpServletRequest req, String protocol) {
-    return new NotebookSocket(req, protocol, this);
+      Notebook notebook = notebook();
+      ZeppelinConfiguration conf =notebook.getConf();
+      if(conf.getAuthFilterClassName()!=null) {
+          WebSocketAuth webSocketAuth = new WebSocketAuth(conf.getAuthFilterClassName());
+          webSocketAuth.validate(req);
+      }
+
+      return new NotebookSocket(req, protocol, this);
   }
 
   @Override
@@ -99,7 +107,8 @@ public class NotebookServer extends WebSocketServlet implements
     try {
       Message messagereceived = deserializeMessage(msg);
       LOG.info("RECEIVE << " + messagereceived.op);
-      /** Lets be elegant here */
+
+        /** Lets be elegant here */
       switch (messagereceived.op) {
           case LIST_NOTES:
             broadcastNoteList();
@@ -614,6 +623,7 @@ public class NotebookServer extends WebSocketServlet implements
     p.settings.setParams(params);
     Map<String, Object> config = (Map<String, Object>) fromMessage
        .get("config");
+      config.put("user", fromMessage.user);
     p.setConfig(config);
     // if it's the last paragraph, let's add a new one
     boolean isTheLastParagraph = note.getLastParagraph().getId()

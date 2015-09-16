@@ -13,6 +13,7 @@
  */
 'use strict';
 
+
 angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope, $websocket, baseUrlSrv) {
   var websocketCalls = {};
 
@@ -28,7 +29,9 @@ angular.module('zeppelinWebApp').factory('websocketEvents', function($rootScope,
   });
 
   websocketCalls.sendNewEvent = function(data) {
-    console.log('Send >> %o, %o', data.op, data);
+    data.token = $rootScope.token && $rootScope.token.token;
+    data.user = $rootScope.token && $rootScope.token.user;
+    console.log('Send >> %o, %o, %o, %o', data.op, data.user, data.ticket, data);
     websocketCalls.ws.send(JSON.stringify(data));
   };
 

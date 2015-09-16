@@ -104,7 +104,10 @@ public class Message {
   }
 
   public OP op;
-  public Map<String, Object> data = new HashMap<String, Object>();
+  public String token;
+  public String user;
+
+    public Map<String, Object> data = new HashMap<String, Object>();
 
   public Message(OP op) {
     this.op = op;
@@ -114,6 +117,7 @@ public class Message {
     data.put(k, v);
     return this;
   }
+
 
   public Object get(String k) {
     return data.get(k);

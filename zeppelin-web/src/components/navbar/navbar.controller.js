@@ -15,7 +15,7 @@
 
 'use strict';
 
-angular.module('zeppelinWebApp').controller('NavCtrl', function($scope, $rootScope, $routeParams, notebookListDataFactory, websocketMsgSrv) {
+angular.module('zeppelinWebApp').controller('NavCtrl', function($scope, $rootScope, $routeParams, notebookListDataFactory, websocketMsgSrv, $http) {
   /** Current list of notes (ids) */
 
   var vm = this;
@@ -36,6 +36,17 @@ angular.module('zeppelinWebApp').controller('NavCtrl', function($scope, $rootSco
   function loadNotes() {
     websocketMsgSrv.getNotebookList();
   }
+
+$http.get('api/auth/token').
+    success(function(token, status, headers, config) {
+      $rootScope.token = angular.fromJson(token).body;
+      vm.loadNotes = loadNotes;
+      vm.isActive = isActive;
+      vm.loadNotes();
+    }).
+    error(function(data, status, headers, config) {
+      console.log('Could not get token');
+    });
 
   function isActive(noteId) {
     return ($routeParams.noteId === noteId);
