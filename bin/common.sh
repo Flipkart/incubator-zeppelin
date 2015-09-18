@@ -140,3 +140,17 @@ fi
 if [[ -z "$DEBUG" ]]; then
   export DEBUG=0
 fi
+
+
+function getIdlePort(){
+read lowerPort upperPort < /proc/sys/net/ipv4/ip_local_port_range
+    for (( port = lowerPort ; port <= upperPort ; port++ )); do
+        nc -z localhost $port;
+	if [ $? -eq 1 ];
+		then
+		break;
+	fi;
+    done
+echo $port
+}
+

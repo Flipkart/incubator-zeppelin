@@ -87,9 +87,23 @@ fi
 
 unset PYSPARKPATH
 
+CLASS_DIR=/tmp/zeppelinclasses
+
 #${ZEPPELIN_RUNNER} ${JAVA_INTP_OPTS}    -Dspark.repl.classdir=/tmp/pp -Dspark.repl.classdirName=abc    -cp ${CLASSPATH} ${ZEPPELIN_SERVER} ${PORT} &
 
-${ZEPPELIN_RUNNER} ${JAVA_INTP_OPTS}   -DCUSTOM_SPARK_REPL_DIR_PATH=/tmp/piyush/  -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=9102  -cp ${CLASSPATH} ${ZEPPELIN_SERVER} ${PORT} &
+if [ $INTERPRETER_ID == "spark" ]; then
+	rm -rf $CLASS_DIR;
+	mkdir -p $CLASS_DIR;
+fi
+
+
+
+
+JMX_PORT=$(getIdlePort)
+ucho "opening with JMX port: " $JMX_PORT " for "$INTERPRETER_ID
+
+${ZEPPELIN_RUNNER} ${JAVA_INTP_OPTS}    -DCUSTOM_SPARK_REPL_DIR_PATH=$CLASS_DIR  -Dcom.sun.management.jmxremote  -Dcom.sun.management.jmxremote.port=$JMX_PORT  -Dcom.sun.management.jmxremote.local.only=false  -Dcom.sun.management.jmxremote.authenticate=false  -Dcom.sun.management.jmxremote.ssl=false   -cp ${CLASSPATH} ${ZEPPELIN_SERVER} ${PORT} &
+
 pid=$!
 if [[ -z "${pid}" ]]; then
   return 1;
