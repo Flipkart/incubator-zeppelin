@@ -45,7 +45,31 @@ if [ -z "${PORT}" ] || [ -z "${INTERPRETER_DIR}" ]; then
     exit 1
 fi
 
+
 . "${bin}/common.sh"
+
+
+
+if [[ -z "${ZEPPELIN_INTP_MEM}" ]]; then
+  export ZEPPELIN_INTP_MEM="${ZEPPELIN_INTP_MEM_DEFAULT}"
+fi
+
+INTERPRETER_ID=$(basename "${INTERPRETER_DIR}")
+INTERPRETER_SPECIFIC_MEM_VARIABLE=`echo $INTERPRETER_ID | awk '{print toupper($0)"_INTP_MEM" }'`
+
+if [[ -n "${!INTERPRETER_SPECIFIC_MEM_VARIABLE}" ]]; then
+  export ZEPPELIN_INTP_MEM="${!INTERPRETER_SPECIFIC_MEM_VARIABLE}"
+fi
+
+
+if [[ -z "${ZEPPELIN_INTP_MEM}" ]]; then
+  export ZEPPELIN_INTP_MEM="${ZEPPELIN_MEM}"
+fi
+
+
+
+
+
 
 ZEPPELIN_CLASSPATH+=":${ZEPPELIN_CONF_DIR}"
 
@@ -63,10 +87,10 @@ CLASSPATH+=":${ZEPPELIN_CLASSPATH}"
 HOSTNAME=$(hostname)
 ZEPPELIN_SERVER=org.apache.zeppelin.interpreter.remote.RemoteInterpreterServer
 
-INTERPRETER_ID=$(basename "${INTERPRETER_DIR}")
+
 ZEPPELIN_PID="${ZEPPELIN_PID_DIR}/zeppelin-interpreter-${INTERPRETER_ID}-${ZEPPELIN_IDENT_STRING}-${HOSTNAME}.pid"
 ZEPPELIN_LOGFILE="${ZEPPELIN_LOG_DIR}/zeppelin-interpreter-${INTERPRETER_ID}-${ZEPPELIN_IDENT_STRING}-${HOSTNAME}.log"
-JAVA_INTP_OPTS+=" -Dzeppelin.log.file=${ZEPPELIN_LOGFILE}"
+JAVA_INTP_OPTS+=" -Dzeppelin.log.file=${ZEPPELIN_LOGFILE} ${ZEPPELIN_INTP_MEM}"
 
 if [[ ! -d "${ZEPPELIN_LOG_DIR}" ]]; then
   echo "Log dir doesn't exist, create ${ZEPPELIN_LOG_DIR}"
@@ -100,9 +124,13 @@ fi
 
 
 JMX_PORT=$(getIdlePort)
-ucho "opening with JMX port: " $JMX_PORT " for "$INTERPRETER_ID
 
-${ZEPPELIN_RUNNER} ${JAVA_INTP_OPTS}    -DCUSTOM_SPARK_REPL_DIR_PATH=$CLASS_DIR  -Dcom.sun.management.jmxremote  -Dcom.sun.management.jmxremote.port=$JMX_PORT  -Dcom.sun.management.jmxremote.local.only=false  -Dcom.sun.management.jmxremote.authenticate=false  -Dcom.sun.management.jmxremote.ssl=false   -cp ${CLASSPATH} ${ZEPPELIN_SERVER} ${PORT} &
+if [[ "0" -ne "${JMX_PORT}"  ]]; then
+echo "opening with JMX port: " $JMX_PORT " for "$INTERPRETER_ID
+export JMX_OPTS="-Dcom.sun.management.jmxremote  -Dcom.sun.management.jmxremote.port=$JMX_PORT  -Dcom.sun.management.jmxremote.local.only=false  -Dcom.sun.management.jmxremote.authenticate=false  -Dcom.sun.management.jmxremote.ssl=false"
+fi
+
+${ZEPPELIN_RUNNER} ${JAVA_INTP_OPTS}    -DCUSTOM_SPARK_REPL_DIR_PATH=$CLASS_DIR  ${JMX_OPTS}   -cp ${CLASSPATH} ${ZEPPELIN_SERVER} ${PORT} &
 
 pid=$!
 if [[ -z "${pid}" ]]; then
