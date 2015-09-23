@@ -118,6 +118,8 @@ CLASS_DIR=/tmp/zeppelinclasses
 if [ $INTERPRETER_ID == "spark" ]; then
 	rm -rf $CLASS_DIR;
 	mkdir -p $CLASS_DIR;
+	x=`echo $ZEPPELIN_JAVA_OPTS  | awk -F "-Dspark.jars=" '{print $2}' | awk '{print $1}' | tr "," ":"`
+  CLASSPATH="${x}":$CLASSPATH
 fi
 
 

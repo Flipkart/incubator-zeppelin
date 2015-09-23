@@ -769,6 +769,7 @@ public class SparkInterpreter extends Interpreter {
   @Override
   public InterpreterResult interpret(String line, org.apache.zeppelin.interpreter.InterpreterContext context) {
     try {
+      sc.setLocalProperty("spark.scheduler.pool","fair");
       sparkInterpreterContextMap.get(context.getNoteId()).getZ().setInterpreterContext(context);
 
     } catch (ExecutionException e) {
