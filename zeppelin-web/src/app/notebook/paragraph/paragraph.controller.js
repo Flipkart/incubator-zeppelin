@@ -24,6 +24,7 @@ angular.module('zeppelinWebApp')
 
   var editorMode = {scala: 'ace/mode/scala', sql: 'ace/mode/sql', markdown: 'ace/mode/markdown', 
 		  sh: 'ace/mode/sh'};
+	var donutFlag= false;
 
   // Controller init
   $scope.init = function(newParagraph) {
@@ -719,6 +720,10 @@ angular.module('zeppelinWebApp')
       result.rows = rows;
     }
   };
+  /*
+  $scope.setColumnName = function(col_name) {
+    box_column = col_name;
+  };*/
 
   $scope.setGraphMode = function(type, emit, refresh) {
     if (emit) {
@@ -836,7 +841,73 @@ angular.module('zeppelinWebApp')
 
   };
 
+  $scope.setDonutFlag = function(flag){
+    donutFlag = flag;
+  };
+    
+  var computeBoxValues = function (values){
+    /*jshint camelcase: false */
+    var Q1,Q2,Q3;
+    var iqr,low,high,whiskerHigh,whiskerLow;
+    var i = 0; var j = 0;
+
+    var firstHalfOfArr = (values.length % 2 === 0) ? values.slice(0, (values.length / 2)) : values.slice(0, Math.floor(values.length / 2));
+    var fullArr =  values;
+    var secondHalfOfArr = (values.length % 2 === 0) ? values.slice((values.length / 2), values.length) : values.slice(Math.ceil(values.length / 2), values.length);
+    Q1 = medianX(firstHalfOfArr);
+    Q2 = medianX(fullArr);
+    Q3 = medianX(secondHalfOfArr);
+              
+    iqr = Q3-Q1;
+    low = Q1 - 1.5 * iqr;
+    high = Q3 + 1.5 * iqr;
+
+    var outliers = firstHalfOfArr.filter(function(n){
+      return (n<low);
+    });     
+    whiskerLow = firstHalfOfArr[i];
+    while(secondHalfOfArr[j]<high) { j++;}
+    whiskerHigh = secondHalfOfArr[j-1];
+    outliers = outliers.concat(secondHalfOfArr.splice(j,secondHalfOfArr.length));
+    return {
+      Q1 : Q1,
+      Q2 : Q2,
+      Q3 : Q3,
+      whisker_low : whiskerLow,
+      whisker_high : whiskerHigh,
+      outliers : outliers
+    };
+  };
+  
+  var medianX = function (medianArr) {
+    var length = medianArr.length;
+    var median = (length % 2 === 0) ? (medianArr[(length/2) - 1] + medianArr[(length / 2)]) / 2:medianArr[Math.floor(length / 2)];
+    return median;
+  };
+  
+  var pivotDataToBoxFormat = function(data) {
+      // parse in the required data here into 'val' array
+      var columnIndex=0;
+      /* commented the code for column selection as it is WIP. Will add once ready.
+      while ( box_column != data.columnNames[col_index].name)
+      {
+          col_index++;
+      }*/
+      
+      var val = data.rows.map(function(row) {
+        return parseInt(row[columnIndex]); 
+      });
+      
+      return  [ 
+        {
+          label: data.columnNames[columnIndex].name,
+          values: computeBoxValues(val),
+        }
+      ];
+    };
+    
   var setD3Chart = function(type, data, refresh) {
+    /*jshint camelcase: false */
     if (!$scope.chart[type]) {
       var chart = nv.models[type]();
       $scope.chart[type] = chart;
@@ -890,7 +961,8 @@ angular.module('zeppelinWebApp')
         var d = pivotDataToD3ChartFormat(p, true).d3g;
 
         $scope.chart[type].x(function(d) { return d.label;})
-          .y(function(d) { return d.value;});
+          .y(function(d) { return d.value;})
+          .donut(donutFlag);
 
         if ( d.length > 0 ) {
           for ( var i=0; i<d[0].values.length ; i++) {
@@ -901,6 +973,14 @@ angular.module('zeppelinWebApp')
             });
           }
         }
+      } else if (type === 'boxPlotChart'){
+        d3g = pivotDataToBoxFormat(data);
+        $scope.chart[type].x(function(d) { return d.label;})
+                          .y(function(d) { return d.value.Q3;})
+                          .staggerLabels(false)
+                          .maxBoxWidth(75) // prevent boxes from being incredibly wide 
+                          .yDomain([0, 500]);
+        
       } else if (type === 'multiBarChart') {
         d3g = pivotDataToD3ChartFormat(p, true, false, type).d3g;
         $scope.chart[type].yAxis.axisLabelDistance(50);
