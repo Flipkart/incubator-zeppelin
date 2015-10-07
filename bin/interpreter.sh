@@ -119,6 +119,7 @@ if [ $INTERPRETER_ID == "spark" ]; then
 	rm -rf $CLASS_DIR;
 	mkdir -p $CLASS_DIR;
 	x=`echo $ZEPPELIN_JAVA_OPTS  | awk -F "-Dspark.jars=" '{print $2}' | awk '{print $1}' | tr "," ":"`
+	JAVA_INTP_OPTS+=" -Xmx32g -Xms32g "
   CLASSPATH="${x}":$CLASSPATH
 fi
 
